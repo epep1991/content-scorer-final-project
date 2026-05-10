@@ -96,7 +96,16 @@ Enable the baseline toggle in the sidebar to run both approaches side by side on
 
 The app scores 15 product pages and renders a sortable dashboard with color-coded readiness tiers. Each row expands to show the five-component breakdown with status badges and failure reasons, plus a metadata completeness checklist.
 
-![Dashboard showing 15 Lululemon products scored with PASS/PARTIAL/FAIL tiers](docs/screenshot.png)
+![Dashboard overview — 15 products, 5 pipeline ready, 5/7/3 split](docs/screenshot.png)
+
+**PASS example — all 5 components extractable:**
+![PASS product detail](docs/Screenshot%202026-05-10%20at%2011.14.29%20AM.png)
+
+**PARTIAL example — some components fail:**
+![PARTIAL product detail](docs/Screenshot%202026-05-10%20at%2011.14.42%20AM.png)
+
+**FAIL example — most components missing or embedded:**
+![FAIL product detail](docs/Screenshot%202026-05-10%20at%2011.14.52%20AM.png)
 
 *Sample output for a failing product:*
 ```
