@@ -96,15 +96,28 @@ Enable the baseline toggle in the sidebar to run both approaches side by side on
 
 The app scores 15 product pages and renders a sortable dashboard with color-coded readiness tiers. Each row expands to show the five-component breakdown with status badges and failure reasons, plus a metadata completeness checklist.
 
-![Dashboard overview — 15 products, 5 pipeline ready, 5/7/3 split](docs/screenshot.png)
+### Readiness tiers
 
-**PASS example — all 5 components extractable:**
+| Tier | Components passing | Meaning |
+|---|---|---|
+| **PASS** | 5 / 5 | All components clearly present and independently extractable. Pipeline ready. |
+| **PARTIAL** | 2 – 4 / 5 | Some components are embedded in prose, dependent on context, or missing. Needs remediation before pipeline use. |
+| **FAIL** | 0 – 1 / 5 | Content is not modular. Pipeline will produce generic or truncated output. |
+
+A page is marked **Pipeline Ready** only when all 5 components pass AND all metadata fields are complete.
+
+---
+
+**Dashboard overview — 15 products scored, 5 pipeline ready, 5 PASS / 7 PARTIAL / 3 FAIL:**
+![Dashboard overview](docs/screenshot.png)
+
+**PASS example (Lululemon Align High-Rise Pant) — all 5 components independently extractable, metadata complete:**
 ![PASS product detail](docs/Screenshot%202026-05-10%20at%2011.14.29%20AM.png)
 
-**PARTIAL example — some components fail:**
+**PARTIAL example (Lululemon Wunder Train Tight) — 3/5 components pass, CTA and audience statement fail:**
 ![PARTIAL product detail](docs/Screenshot%202026-05-10%20at%2011.14.42%20AM.png)
 
-**FAIL example — most components missing or embedded:**
+**FAIL example (Lululemon ABC Pant Classic) — 1/5 components pass, features and description buried in run-on prose:**
 ![FAIL product detail](docs/Screenshot%202026-05-10%20at%2011.14.52%20AM.png)
 
 *Sample output for a failing product:*
