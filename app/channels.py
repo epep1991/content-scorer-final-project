@@ -1,4 +1,32 @@
 CHANNELS = {
+    "Facebook - Feed": {
+        "id": "facebook_feed",
+        "platform": "Facebook",
+        "placement": "Feed",
+        "char_limits": {
+            "headline": {
+                "limit": 27,
+                "field": "Headline",
+                "note": "Facebook feed headline — stricter than Instagram (40)",
+            },
+            "short_description": {
+                "limit": 125,
+                "field": "Primary Text",
+                "note": "Only first 125 chars shown before '...more' truncation",
+            },
+            "description": {
+                "limit": 30,
+                "field": "Description",
+                "note": "Displayed under the headline on Facebook feed",
+            },
+            "cta": {
+                "limit": 20,
+                "field": "CTA Button Text",
+                "note": "Standard options like 'Shop Now', 'Learn More'",
+            },
+        },
+        "components": ["headline", "short_description", "feature_list", "audience_statement", "cta"],
+    },
     "Instagram - Main Feed": {
         "id": "instagram_main_feed",
         "platform": "Instagram",
