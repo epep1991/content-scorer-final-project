@@ -9,9 +9,16 @@ from app.channels import CHANNELS
 
 
 def get_api_key():
+    # 1. Streamlit Cloud secrets
+    try:
+        return st.secrets["ANTHROPIC_API_KEY"]
+    except Exception:
+        pass
+    # 2. Environment variable
     key = os.environ.get("ANTHROPIC_API_KEY", "")
     if key:
         return key
+    # 3. Local .env file
     env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
     if os.path.exists(env_path):
         with open(env_path) as f:
