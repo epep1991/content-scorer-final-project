@@ -46,6 +46,29 @@ CSV upload → Python pre-check (HTML stripping, char limit validation, metadata
 - **Model:** `claude-haiku-4-5-20251001` at temperature 0.1 for consistency.
 - **Baseline comparison:** Optional toggle runs the same content through a prompt-only approach (no rubric, no tool schema) for side-by-side comparison.
 
+### Scoring rubric (decision tree)
+
+For each component, the model applies this decision tree in order:
+
+```
+1. Is the component present anywhere in the content?
+   → NO:  status = MISSING
+
+2. Is it syntactically separable from surrounding text?
+   (separable = its own sentence, clause, bullet, or heading)
+   → NO:  status = EMBEDDED
+
+3. Does it function independently without surrounding page context?
+   (fails if it contains pronouns or references that only make sense
+   after reading other parts of the page, e.g. "This changes everything")
+   → NO:  status = DEPENDENT
+
+4. All checks pass
+   → status = PASS
+```
+
+The model scores and explains only — it does not rewrite or suggest edits.
+
 ### Key design choice
 
 The Python script handles everything deterministic (character limit checks, metadata completeness, HTML stripping, schema validation). The model handles only the semantic judgment — whether a component is structurally extractable. Neither can do the other's job.
@@ -112,13 +135,13 @@ A page is marked **Pipeline Ready** only when all 5 components pass AND all meta
 ![Dashboard overview](docs/screenshot.png)
 
 **PASS example (Lululemon Align High-Rise Pant) — all 5 components independently extractable, metadata complete:**
-![PASS product detail](docs/Screenshot%202026-05-10%20at%2011.14.29%20AM.png)
+![PASS product detail](docs/screenshot_pass.png)
 
 **PARTIAL example (Lululemon Wunder Train Tight) — 3/5 components pass, CTA and audience statement fail:**
-![PARTIAL product detail](docs/Screenshot%202026-05-10%20at%2011.14.42%20AM.png)
+![PARTIAL product detail](docs/screenshot_partial.png)
 
 **FAIL example (Lululemon ABC Pant Classic) — 1/5 components pass, features and description buried in run-on prose:**
-![FAIL product detail](docs/Screenshot%202026-05-10%20at%2011.14.52%20AM.png)
+![FAIL product detail](docs/screenshot_fail.png)
 
 *Sample output for a failing product:*
 ```
