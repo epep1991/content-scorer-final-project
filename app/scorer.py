@@ -128,6 +128,20 @@ def score_row(row, channel, api_key, run_baseline=False):
             **({"char_limit_note": char_limits[name]["note"]} if name in char_limits else {}),
         }
 
+    # Deterministic override: enforce headline character limit using the first sentence.
+    # The model cannot reliably count characters, so Python handles this gate.
+    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", cleaned) if s.strip()]
+    first_sentence = sentences[0] if sentences else ""
+    headline_limit = channel["char_limits"]["headline"]["limit"]
+    if "headline" in components and components["headline"]["status"] == "pass":
+        if len(first_sentence) > headline_limit:
+            components["headline"]["status"] = "missing"
+            components["headline"]["reason"] = (
+                f"Best headline candidate is {len(first_sentence)} chars — "
+                f"exceeds the {headline_limit}-char limit for {channel['platform']} {channel['placement']}"
+            )
+            components["headline"].pop("char_limit_note", None)
+
     passing = sum(1 for c in components.values() if c["status"] == "pass")
 
     result = {
