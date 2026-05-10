@@ -95,7 +95,13 @@ For each of the five components, apply this decision tree in order:
    - If NOT separable: status="embedded"
    - If separable: continue to step 3.
 
-3. Does the component function independently without surrounding page context?
+3. Does the extracted component fit within this channel's character limit?
+   - Apply ONLY to headline and cta, which have strict ad field limits.
+   - Count characters in the best extractable candidate. If it exceeds the limit, no usable version exists for this channel.
+   - If it EXCEEDS the channel limit: status="missing" (reason must state the character count and limit)
+   - If it fits: continue to step 4.
+
+4. Does the component function independently without surrounding page context?
    - IS independent: a reader seeing it alone in an ad would understand what it refers to.
    - NOT independent: contains pronouns or references that only make sense after reading other parts of the page (e.g. "This changes everything" with no product name).
    - If NOT independent: status="dependent"
@@ -103,8 +109,9 @@ For each of the five components, apply this decision tree in order:
 
 ## Pass Examples
 
-- headline PASS: "Hands-free. Always ready." — short, self-contained, works alone in an ad
-- headline PASS: "Nothing feels like Align." — brand-aware, self-contained claim
+- headline PASS: "Hands-free. Always ready." — 25 chars, short, self-contained, works alone in an ad
+- headline PASS: "Nothing feels like Align." — 25 chars, brand-aware, self-contained claim
+- headline MISSING: "Built for Speed and Hot Weather." — 32 chars, exceeds a 27-char channel limit; no shorter extractable headline exists
 - headline DEPENDENT: "This one is different." — requires context to know what "this" refers to
 - feature_list PASS: bullet list of 3+ items, each independently readable
 - feature_list PASS: period-separated items like "1L capacity. Water-repellent fabric. Adjustable strap." — discrete items separated by punctuation count as a structured list
