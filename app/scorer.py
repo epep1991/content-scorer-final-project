@@ -137,7 +137,7 @@ def score_row(row, channel, api_key, run_baseline=False):
         "components": components,
         "metadata": metadata["fields"],
         "metadata_complete": metadata["metadata_complete"],
-        "expected_result": str(row.get("expected_result", "")),
+        "expected_result": "" if str(row.get("expected_result", "")) in ("nan", "None", "") else str(row.get("expected_result", "")),
     }
 
     if run_baseline:
