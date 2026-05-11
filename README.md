@@ -10,7 +10,7 @@
 
 **The workflow being improved:** Before feeding product pages into an AI generation pipeline, someone needs to check whether the source content is structurally ready. Today, no one does this systematically. Teams discover the problem when the AI output is bad: truncated headlines, generic copy, missing CTAs.
 
-**Why it matters:** Instagram and Facebook ad fields have hard character limits — a headline truncates at 40 characters, primary text at 125. When source content is not modular (components are buried in prose, not independently extractable), AI generation either hallucinates to fill structural gaps or produces output a human has to rewrite. That defeats the automation.
+**Why it matters:** Instagram and Facebook ad fields have hard character limits — a Facebook Feed headline truncates at 27 characters, Instagram at 40, primary text at 125 for both. When source content is not modular (components are buried in prose, not independently extractable), AI generation either hallucinates to fill structural gaps or produces output a human has to rewrite. That defeats the automation.
 
 This tool surfaces those failures **before** the pipeline runs. It is the readiness check that has to happen before the agent gets turned on.
 
@@ -37,12 +37,16 @@ Each component receives one of four statuses: **pass**, **embedded**, **dependen
 ```
 CSV upload → Python pre-check (HTML stripping, char limit validation, metadata check)
            → Anthropic API call with tool use (structured scoring per component)
+           → Python post-check (deterministic headline char limit override)
            → Streamlit dashboard (sortable results table + component detail view)
 ```
 
 - **Tool use / function calling:** The model calls a `score_component` tool for each of the five components. The tool schema constrains `component_name` to five allowed values and `status` to four allowed values, guaranteeing structured output across all pages.
-- **Engineered system prompt:** The scoring rubric lives in a dynamic system prompt built per channel. It enforces a four-stage decision tree (present → separable → independent → pass), explicit pass/fail examples, and strict constraints preventing the model from editorializing or suggesting rewrites.
-- **Channel-aware config:** Character limits are defined per channel in `app/channels.py`. Switching channels updates both the deterministic pre-checks and the model's system prompt. Currently supports Instagram Main Feed (headline: 40 chars, primary text: 125 chars, CTA: 20 chars).
+- **Engineered system prompt:** The scoring rubric lives in a dynamic system prompt built per channel. It enforces a four-stage decision tree (present → separable → within character limit → independent → pass), explicit pass/fail examples, and strict constraints preventing the model from editorializing or suggesting rewrites.
+- **Channel-aware config:** Character limits are defined per channel in `app/channels.py`. Switching channels updates both the deterministic pre-checks, the model's system prompt, and the Python post-check. Currently supports two channels:
+  - **Facebook Feed** — headline: 27 chars, primary text: 125 chars, CTA: 20 chars
+  - **Instagram Main Feed** — headline: 40 chars, primary text: 125 chars, CTA: 20 chars
+- **Python / LLM division of labor:** The Python script handles everything deterministic (character limit enforcement, metadata completeness, HTML stripping, schema validation). The model handles only the semantic judgment — whether a component is structurally present, separable, and independent. Neither can do the other's job. Headline character limits are enforced by Python post-processing rather than relying on the model to count characters, which LLMs do unreliably.
 - **Model:** `claude-haiku-4-5-20251001` at temperature 0.1 for consistency.
 - **Baseline comparison:** Optional toggle runs the same content through a prompt-only approach (no rubric, no tool schema) for side-by-side comparison.
 
@@ -58,12 +62,15 @@ For each component, the model applies this decision tree in order:
    (separable = its own sentence, clause, bullet, or heading)
    → NO:  status = EMBEDDED
 
-3. Does it function independently without surrounding page context?
+3. Does it fit within the channel's character limit? (headline and CTA only)
+   → NO:  status = MISSING (enforced by Python post-check for reliability)
+
+4. Does it function independently without surrounding page context?
    (fails if it contains pronouns or references that only make sense
    after reading other parts of the page, e.g. "This changes everything")
    → NO:  status = DEPENDENT
 
-4. All checks pass
+5. All checks pass
    → status = PASS
 ```
 
@@ -71,7 +78,7 @@ The model scores and explains only — it does not rewrite or suggest edits.
 
 ### Key design choice
 
-The Python script handles everything deterministic (character limit checks, metadata completeness, HTML stripping, schema validation). The model handles only the semantic judgment — whether a component is structurally extractable. Neither can do the other's job.
+Python handles everything deterministic. The model handles only semantic judgment. Character limit enforcement is a clear example: a sentence is either under 27 characters or it isn't. That rule belongs in Python, not in a prompt. The result is a system where each layer does what it's best at, and neither substitutes for the other.
 
 ---
 
@@ -79,15 +86,15 @@ The Python script handles everything deterministic (character limit checks, meta
 
 ### Test set
 
-15 synthetic Lululemon product pages covering common failure patterns:
+18 synthetic Lululemon product pages covering common failure patterns:
 
 | Tier | Count | Failure patterns represented |
 |---|---|---|
 | PASS | 5 | All five components clearly present and extractable, metadata complete |
-| PARTIAL | 7 | Run-on prose, missing CTAs, embedded features, incomplete metadata |
+| PARTIAL | 10 | Run-on prose, missing CTAs, embedded features, incomplete metadata, headlines exceeding channel limits |
 | FAIL | 3 | Dependent headlines, narrative-only content, missing most components |
 
-Ground truth labels are documented in `data/product_pages.csv` (`expected_result` column).
+Ground truth labels are documented in `data/product_pages.csv` (`expected_result` column). Three products (Hotty Hot Short, City Adventurer Backpack, Metal Vent Tech Shirt) have no single ground truth label — their expected tier differs by channel by design.
 
 ### What counted as good output
 
@@ -95,7 +102,20 @@ A correct result means the scorer's tier (PASS / PARTIAL / FAIL) matches the gro
 
 ### Scorer accuracy
 
-The scorer correctly classified **14 of 15 products** against ground truth labels. The one correction required was a labeling error in the ground truth — two products initially labeled FAIL were found to have 4/5 extractable components and were correctly relabeled PARTIAL after manual review. This is itself a finding: the scorer can surface labeling inconsistencies in content audits.
+The scorer correctly classified **15 of 15 labeled products** against ground truth labels. Three additional products (the cross-channel contrast set) have no single label — they are designed to produce different scores on different channels.
+
+The one labeling issue encountered during development: two products initially labeled FAIL were found to have 4/5 extractable components and were correctly relabeled PARTIAL after the scorer flagged the inconsistency. This is itself a finding: the scorer can surface labeling errors in content audits.
+
+### Cross-channel comparison
+
+Running the same 18 products against both channels produces meaningfully different results:
+
+| Channel | PASS | PARTIAL | FAIL |
+|---|---|---|---|
+| Facebook Feed | 5 | 10 | 3 |
+| Instagram Main Feed | 7 | 8 | 3 |
+
+The 2-product shift reflects the three cross-channel products: their headlines (30–34 chars) clear Instagram's 40-char limit but fail Facebook's 27-char limit. Switching channels, not changing content, changes readiness scores — which is the core demonstration of channel-aware scoring.
 
 ### Baseline comparison
 
@@ -111,13 +131,14 @@ Enable the baseline toggle in the sidebar to run both approaches side by side on
 
 - **Ambiguous feature lists:** Period-separated sentences (e.g. "Duck down fill. Water-repellent shell.") required explicit calibration in the rubric to be recognized as a passing feature list rather than embedded prose. The boundary between structured and unstructured content is the hardest edge case.
 - **Shared content:** A single sentence serving as both headline and short description is not handled by the rubric. The scorer may credit one and mark the other missing.
+- **LLM character counting:** The model cannot reliably count characters. Headline character limits are enforced by a Python post-processing step rather than prompt instruction. This is documented as a design decision, not a limitation.
 - **Scope boundary:** The scorer evaluates structural modularity only. A page that scores PASS may still produce off-brand or factually incorrect ad copy. This is a structural prerequisite check, not a content quality guarantee.
 
 ---
 
 ## 4. Artifact Snapshot
 
-The app scores 15 product pages and renders a sortable dashboard with color-coded readiness tiers. Each row expands to show the five-component breakdown with status badges and failure reasons, plus a metadata completeness checklist.
+The app scores 18 product pages and renders a sortable dashboard with color-coded readiness tiers. Each row expands to show the five-component breakdown with status badges and failure reasons, plus a metadata completeness checklist. The channel dropdown switches between Facebook Feed and Instagram Main Feed, updating character limits, the system prompt, and the Python override in real time.
 
 ### Readiness tiers
 
@@ -131,7 +152,7 @@ A page is marked **Pipeline Ready** only when all 5 components pass AND all meta
 
 ---
 
-**Dashboard overview — 15 products scored, 5 pipeline ready, 5 PASS / 7 PARTIAL / 3 FAIL:**
+**Dashboard overview — 18 products scored, Facebook Feed: 5 PASS / 10 PARTIAL / 3 FAIL:**
 ![Dashboard overview](docs/screenshot.png)
 
 **PASS example (Lululemon Align High-Rise Pant) — all 5 components independently extractable, metadata complete:**
@@ -193,7 +214,7 @@ Open the URL shown in the terminal (typically `http://localhost:8501`).
 ### Using the app
 
 1. In the sidebar, upload `data/product_pages.csv` (included in this repo)
-2. Select **Instagram - Main Feed** as the channel
+2. Select a channel — try **Facebook - Feed** first, then switch to **Instagram - Main Feed** to see scores change
 3. Click **▶ Run Scorer**
 4. Expand any product row to see the component-level breakdown
 
@@ -221,12 +242,12 @@ Column names are normalized automatically (spaces and capitalization are handled
 content-scorer-final-project/
 ├── app/
 │   ├── streamlit_app.py        # Streamlit UI
-│   ├── scorer.py               # Scoring engine (API calls, pre-checks)
+│   ├── scorer.py               # Scoring engine (API calls, pre-checks, post-checks)
 │   └── channels.py             # Channel definitions and dynamic system prompt
 ├── data/
-│   └── product_pages.csv       # 15 synthetic test pages with ground truth labels
-├── .agents/skills/
-│   └── content-component-scorer/   # Reusable skill (from HW5)
+│   └── product_pages.csv       # 18 synthetic test pages with ground truth labels
+├── docs/
+│   └── screenshots/            # Dashboard and product detail screenshots
 ├── requirements.txt
 └── .env                        # Not committed — create this yourself
 ```
