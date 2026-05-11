@@ -27,10 +27,10 @@ CHANNELS = {
         },
         "components": ["headline", "short_description", "feature_list", "audience_statement", "cta"],
     },
-    "Instagram - Main Feed": {
+    "Instagram - Feed": {
         "id": "instagram_main_feed",
         "platform": "Instagram",
-        "placement": "Main Feed",
+        "placement": "Feed",
         "char_limits": {
             "headline": {
                 "limit": 40,

@@ -49,7 +49,7 @@ CSV upload → Python pre-check (HTML stripping, char limit validation, metadata
 - **Engineered system prompt:** The scoring rubric lives in a dynamic system prompt built per channel. It enforces a four-stage decision tree (present → separable → within character limit → independent → pass), explicit pass/fail examples, and strict constraints preventing the model from editorializing or suggesting rewrites.
 - **Channel-aware config:** Character limits are defined per channel in `app/channels.py`. Switching channels updates both the deterministic pre-checks, the model's system prompt, and the Python post-check. Currently supports two channels:
   - **Facebook Feed** — headline: 27 chars, primary text: 125 chars, CTA: 20 chars
-  - **Instagram Main Feed** — headline: 40 chars, primary text: 125 chars, CTA: 20 chars
+  - **Instagram Feed** — headline: 40 chars, primary text: 125 chars, CTA: 20 chars
 - **Python / LLM division of labor:** The Python script handles everything deterministic (character limit enforcement, metadata completeness, HTML stripping, schema validation). The model handles only the semantic judgment — whether a component is structurally present, separable, and independent. Neither can do the other's job. Headline character limits are enforced by Python post-processing rather than relying on the model to count characters, which LLMs do unreliably.
 - **Model:** `claude-haiku-4-5-20251001` at temperature 0.1 for consistency.
 - **Baseline comparison:** Optional toggle runs the same content through a prompt-only approach (no rubric, no tool schema) for side-by-side comparison.
@@ -117,7 +117,7 @@ Running the same 18 products against both channels produces meaningfully differe
 | Channel | PASS | PARTIAL | FAIL |
 |---|---|---|---|
 | Facebook Feed | 5 | 10 | 3 |
-| Instagram Main Feed | 7 | 8 | 3 |
+| Instagram Feed | 7 | 8 | 3 |
 
 The 2-product shift reflects the three cross-channel products: their headlines (30–34 chars) clear Instagram's 40-char limit but fail Facebook's 27-char limit. Switching channels, not changing content, changes readiness scores — which is the core demonstration of channel-aware scoring.
 
@@ -142,7 +142,7 @@ Enable the baseline toggle in the sidebar to run both approaches side by side on
 
 ## 4. Artifact Snapshot
 
-The app scores 18 product pages and renders a sortable dashboard with color-coded readiness tiers. Each row expands to show the five-component breakdown with status badges and failure reasons, plus a metadata completeness checklist. The channel dropdown switches between Facebook Feed and Instagram Main Feed, updating character limits, the system prompt, and the Python override in real time.
+The app scores 18 product pages and renders a sortable dashboard with color-coded readiness tiers. Each row expands to show the five-component breakdown with status badges and failure reasons, plus a metadata completeness checklist. The channel dropdown switches between Facebook Feed and Instagram Feed, updating character limits, the system prompt, and the Python override in real time.
 
 ### Readiness tiers
 
@@ -161,8 +161,8 @@ A page is marked **Pipeline Ready** only when all 5 components pass AND all meta
 Facebook Feed (headline limit: 27 chars) — **5 PASS / 10 PARTIAL / 3 FAIL:**
 ![Facebook Feed dashboard](docs/screenshot_facebook.png)
 
-Instagram Main Feed (headline limit: 40 chars) — **7 PASS / 8 PARTIAL / 3 FAIL:**
-![Instagram Main Feed dashboard](docs/screenshot_instagram.png)
+Instagram Feed (headline limit: 40 chars) — **7 PASS / 8 PARTIAL / 3 FAIL:**
+![Instagram Feed dashboard](docs/screenshot_instagram.png)
 
 The 2-product shift between channels comes entirely from the three products whose headlines fall in the 28–40 character range — clean and extractable for Instagram, too long for Facebook. Same content, different channel, different readiness score.
 
@@ -225,7 +225,7 @@ Open the URL shown in the terminal (typically `http://localhost:8501`).
 ### Using the app
 
 1. In the sidebar, upload `data/product_pages.csv` (included in this repo)
-2. Select a channel — try **Facebook - Feed** first, then switch to **Instagram - Main Feed** to see scores change
+2. Select a channel — try **Facebook - Feed** first, then switch to **Instagram - Feed** to see scores change
 3. Click **▶ Run Scorer**
 4. Expand any product row to see the component-level breakdown
 
