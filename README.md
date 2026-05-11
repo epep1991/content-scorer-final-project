@@ -8,11 +8,15 @@
 
 **Who the user is:** A content strategist or content manager at a brand using an internal AI pipeline to generate paid social ad variants (Instagram, Facebook) from existing product description pages.
 
-**The workflow being improved:** Before feeding product pages into an AI generation pipeline, someone needs to check whether the source content is structurally ready. Today, no one does this systematically. Teams discover the problem when the AI output is bad: truncated headlines, generic copy, missing CTAs.
+**The problem this replaces:** Today, creating paid social ad content from product pages is a manual, multi-source assembly job. A copywriter pulls the headline from the product title, extracts a description from the body, hunts for feature bullets buried in a product spec sheet, checks a separate brand guidelines doc for the CTA, and confirms image metadata in a DAM system. That assembly process — stitching together components from different sources into a format that fits each channel's constraints — is exactly what an AI pipeline is supposed to automate.
+
+But the pipeline breaks when the source content isn't ready. If the headline is buried in prose, the AI can't extract it cleanly. If features are woven into a narrative sentence, there's no discrete list to pull. If the CTA is implied rather than explicit, the ad field stays empty or the model hallucinates a generic replacement. The result: a human has to review and rewrite AI output that was supposed to be automatic, negating the efficiency gain.
+
+**The workflow being improved:** Before feeding product pages into an AI generation pipeline, someone needs to verify that each required component is actually present and independently extractable — not just that the page has content. Today, no one does this systematically. Teams discover the problem when the AI output is bad: truncated headlines, generic copy, missing CTAs.
 
 **Why it matters:** Instagram and Facebook ad fields have hard character limits — a Facebook Feed headline truncates at 27 characters, Instagram at 40, primary text at 125 for both. When source content is not modular (components are buried in prose, not independently extractable), AI generation either hallucinates to fill structural gaps or produces output a human has to rewrite. That defeats the automation.
 
-This tool surfaces those failures **before** the pipeline runs. It is the readiness check that has to happen before the agent gets turned on.
+This tool surfaces those failures **before** the pipeline runs — and does so per channel, since the same content may be ready for Instagram but not for Facebook. It is the readiness check that has to happen before the agent gets turned on.
 
 ---
 
@@ -152,8 +156,15 @@ A page is marked **Pipeline Ready** only when all 5 components pass AND all meta
 
 ---
 
-**Dashboard overview — 18 products scored, Facebook Feed: 5 PASS / 10 PARTIAL / 3 FAIL:**
-![Dashboard overview](docs/screenshot.png)
+**Channel comparison — same 18 products, different readiness scores depending on channel:**
+
+Facebook Feed (headline limit: 27 chars) — **5 PASS / 10 PARTIAL / 3 FAIL:**
+![Facebook Feed dashboard](docs/screenshot_facebook.png)
+
+Instagram Main Feed (headline limit: 40 chars) — **7 PASS / 8 PARTIAL / 3 FAIL:**
+![Instagram Main Feed dashboard](docs/screenshot_instagram.png)
+
+The 2-product shift between channels comes entirely from the three products whose headlines fall in the 28–40 character range — clean and extractable for Instagram, too long for Facebook. Same content, different channel, different readiness score.
 
 **PASS example (Lululemon Align High-Rise Pant) — all 5 components independently extractable, metadata complete:**
 ![PASS product detail](docs/screenshot_pass.png)
