@@ -2,6 +2,8 @@
 
 *The pre-flight check for AI-powered paid social ad generation*
 
+App deployed and available on https://content-scorer.streamlit.app/
+
 ---
 
 ## 1. Context, User, and Problem
